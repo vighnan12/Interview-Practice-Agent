@@ -4,6 +4,7 @@ import MessageBubble from './MessageBubble'
 function ChatWindow({ messages, onSendMessage, isLoading, phase }) {
   const [isRecording, setIsRecording] = useState(false)
   const [transcript, setTranscript] = useState('')
+  const [inputText, setInputText] = useState('')
   const [isSupported, setIsSupported] = useState(false)
   const messagesEndRef = useRef(null)
   const recognitionRef = useRef(null)
@@ -116,6 +117,14 @@ function ChatWindow({ messages, onSendMessage, isLoading, phase }) {
     }
   }
 
+  const handleTextSubmit = (e) => {
+    e.preventDefault()
+    if (inputText.trim() && !isLoading && phase !== 'final_feedback') {
+      onSendMessage(inputText.trim())
+      setInputText('')
+    }
+  }
+
   return (
     <div className="flex flex-col h-[600px]">
       {/* Messages Area */}
@@ -156,50 +165,77 @@ function ChatWindow({ messages, onSendMessage, isLoading, phase }) {
           <div className="text-center text-gray-500 text-sm py-2">
             Click "Start Interview" to begin.
           </div>
-        ) : !isSupported ? (
-          <div className="text-center text-gray-500 text-sm py-2">
-            Your browser doesn't support speech recognition. Please use Chrome, Edge, or Safari.
-          </div>
         ) : (
-          <div className="flex flex-col items-center gap-3">
-            {/* Transcript Display */}
+          <div className="flex flex-col gap-3">
+            {/* Transcript Display (only shown when recording) */}
             {transcript && (
               <div className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 min-h-[40px]">
                 {transcript || 'Listening...'}
               </div>
             )}
-            
-            {/* Recording Button */}
-            <div className="flex items-center gap-3">
-              {isRecording ? (
-                <>
-                  <button
-                    onClick={stopRecording}
-                    disabled={isLoading}
-                    className="flex items-center justify-center w-16 h-16 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg relative"
-                  >
-                    <div className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-75"></div>
-                    <svg className="w-6 h-6 relative z-10" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zM12 9a1 1 0 10-2 0v2a1 1 0 102 0V9z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  <span className="text-sm text-gray-600 font-medium">Recording... Click to stop</span>
-                </>
+
+            {/* Input Options: Text Input and Microphone */}
+            <div className="flex gap-2 items-end">
+              {/* Text Input */}
+              <form onSubmit={handleTextSubmit} className="flex-1 flex gap-2">
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder="Type your answer here..."
+                  disabled={isLoading || phase === 'final_feedback' || isRecording}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+                <button
+                  type="submit"
+                  disabled={!inputText.trim() || isLoading || phase === 'final_feedback' || isRecording}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  Send
+                </button>
+              </form>
+
+              {/* Microphone Button */}
+              {isSupported ? (
+                <div className="flex items-center gap-2">
+                  {isRecording ? (
+                    <button
+                      onClick={stopRecording}
+                      disabled={isLoading}
+                      className="flex items-center justify-center w-14 h-14 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg relative"
+                      title="Stop Recording"
+                    >
+                      <div className="absolute inset-0 rounded-full bg-red-600 animate-ping opacity-75"></div>
+                      <svg className="w-6 h-6 relative z-10" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zM12 9a1 1 0 10-2 0v2a1 1 0 102 0V9z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={startRecording}
+                      disabled={isLoading || phase === 'final_feedback'}
+                      className="flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg"
+                      title="Start Voice Recording"
+                    >
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               ) : (
-                <>
-                  <button
-                    onClick={startRecording}
-                    disabled={isLoading || phase === 'final_feedback'}
-                    className="flex items-center justify-center w-16 h-16 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-lg"
-                  >
-                    <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  <span className="text-sm text-gray-600 font-medium">Click to start recording your answer</span>
-                </>
+                <div className="text-xs text-gray-500 px-2">
+                  Voice not supported
+                </div>
               )}
             </div>
+
+            {/* Recording Status */}
+            {isRecording && (
+              <div className="text-center text-sm text-red-600 font-medium">
+                🎤 Recording... Speak your answer
+              </div>
+            )}
           </div>
         )}
       </div>
