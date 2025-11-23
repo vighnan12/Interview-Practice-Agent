@@ -23,7 +23,7 @@ A full-stack application for practicing interviews with an AI-powered mock inter
 cd server
 ```
 
-2. Install dependencies:
+2. Install dependencies :
 ```bash
 npm install
 ```
